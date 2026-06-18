@@ -40,12 +40,28 @@ function CircularProgress({ percent, size = 90, strokeWidth = 7, color = "#FF8A3
   )
 }
 
+const moodEmojis = {
+  energized: "😄",
+  calm: "😌",
+  normal: "🙂",
+  tired: "😴",
+  stress: "😰",
+}
+
+function formatDateKey(date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, "0")
+  const d = String(date.getDate()).padStart(2, "0")
+  return `${y}-${m}-${d}`
+}
+
 export default function Progress() {
   const [activeTab, setActiveTab] = useState("progress")
   const [waterMl, setWaterMl] = useState(0)
   const [tasks, setTasks] = useState([])
   const [streak, setStreak] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [weekMoods, setWeekMoods] = useState([])
 
   useEffect(() => {
     const unsubWater = onSnapshot(doc(db, "waterProgress", "default"), (snap) => {
@@ -55,7 +71,7 @@ export default function Progress() {
     })
 
     const today = new Date()
-    const dateKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
+    const dateKey = formatDateKey(today)
     const unsubTasks = onSnapshot(doc(db, "planner", dateKey), (snap) => {
       if (snap.exists()) {
         setTasks(snap.data().tasks || [])
@@ -78,7 +94,7 @@ export default function Progress() {
       let checkDate = new Date(today)
 
       for (let i = 0; i < 365; i++) {
-        const dateKey = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, "0")}-${String(checkDate.getDate()).padStart(2, "0")}`
+        const dateKey = formatDateKey(checkDate)
         const snap = await getDocs(query(collection(db, "planner"), where("__name__", "==", dateKey)))
         
         if (snap.empty) {
@@ -101,6 +117,49 @@ export default function Progress() {
     }
 
     calcStreak()
+  }, [])
+
+  useEffect(() => {
+    async function loadWeekMoods() {
+      const days = []
+      const today = new Date()
+      
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today)
+        date.setDate(today.getDate() - i)
+        const dateKey = formatDateKey(date)
+        
+        const snap = await getDocs(query(collection(db, "moodTracker"), where("__name__", "==", dateKey)))
+        
+        const dayData = {
+          date: date,
+          dateKey: dateKey,
+          label: ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"][date.getDay()],
+          morning: null,
+          day: null,
+          evening: null,
+        }
+        
+        if (!snap.empty) {
+          const data = snap.docs[0].data()
+          if (data.morning && data.morning.mood) {
+            dayData.morning = moodEmojis[data.morning.mood] || "❓"
+          }
+          if (data.day && data.day.mood) {
+            dayData.day = moodEmojis[data.day.mood] || "❓"
+          }
+          if (data.evening && data.evening.mood) {
+            dayData.evening = moodEmojis[data.evening.mood] || "❓"
+          }
+        }
+        
+        days.push(dayData)
+      }
+      
+      setWeekMoods(days)
+    }
+
+    loadWeekMoods()
   }, [])
 
   const planned = tasks.length
@@ -186,6 +245,30 @@ export default function Progress() {
             <p className="text-xs text-white/85 font-medium">{streak} дней подряд</p>
           </div>
           <div className="absolute -right-3 -bottom-3 text-6xl opacity-20">⚡</div>
+        </div>
+
+        {/* 5. Mood Tracking Section */}
+        <div>
+          <p className="text-sm font-semibold mb-3 text-gray-800">Настроение за неделю</p>
+          <div className="bg-white rounded-[28px] p-4 shadow-md">
+            <div className="grid grid-cols-7 gap-1">
+              {weekMoods.map((day, i) => (
+                <div key={i} className="flex flex-col items-center gap-1">
+                  <span className="text-[10px] font-semibold text-gray-500">{day.label}</span>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm">{day.morning || "—"}</span>
+                    <span className="text-sm">{day.day || "—"}</span>
+                    <span className="text-sm">{day.evening || "—"}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-between mt-2 px-1">
+              <span className="text-[9px] text-gray-400">Утро</span>
+              <span className="text-[9px] text-gray-400">День</span>
+              <span className="text-[9px] text-gray-400">Вечер</span>
+            </div>
+          </div>
         </div>
 
         {/* Bottom Navigation */}

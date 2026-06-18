@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import Lottie from "lottie-react"
-import { doc, getDoc, updateDoc } from "firebase/firestore"
+import { doc, getDoc, updateDoc, setDoc, serverTimestamp } from "firebase/firestore"
 import { db } from "./firebase"
 import morning from "./assets/morning.jpg"
 import day from "./assets/day.jpg"
@@ -14,9 +14,15 @@ import Progress from "./Progress"
 
 function getTimePeriod() {
   const hour = new Date().getHours()
-  if (hour >= 6 && hour < 12) return "morning"
-  if (hour >= 12 && hour < 19) return "day"
+  if (hour >= 5 && hour < 12) return "morning"
+  if (hour >= 12 && hour < 18) return "day"
   return "evening"
+}
+
+function getMoodPeriodLabel(period) {
+  if (period === "morning") return "утро"
+  if (period === "day") return "день"
+  return "вечер"
 }
 
 const headerData = {
@@ -46,11 +52,11 @@ function getWeekDays() {
 }
 
 const moods = [
-  { key: "energized", label: "Заряжен", file: "Energized.json" },
-  { key: "calm", label: "Спокоен", file: "calm.json" },
-  { key: "normal", label: "Нормально", file: "normal.json" },
-  { key: "tired", label: "Устал", file: "tired.json" },
-  { key: "stress", label: "Стресс", file: "Stress.json" },
+  { key: "energized", label: "Заряжен", file: "Energized.json", emoji: "😄" },
+  { key: "calm", label: "Спокоен", file: "calm.json", emoji: "😌" },
+  { key: "normal", label: "Нормально", file: "normal.json", emoji: "🙂" },
+  { key: "tired", label: "Устал", file: "tired.json", emoji: "😴" },
+  { key: "stress", label: "Стресс", file: "Stress.json", emoji: "😰" },
 ]
 
 function MoodAnimation({ file }) {
@@ -82,6 +88,9 @@ export default function App() {
   const [selectedMood, setSelectedMood] = useState(() => localStorage.getItem("luma_mood") || null)
   const [tasks, setTasks] = useState([])
   const [showProfileModal, setShowProfileModal] = useState(false)
+  const [moodData, setMoodData] = useState({})
+  const [selectedMoodPeriod, setSelectedMoodPeriod] = useState(null)
+  const [moodLoading, setMoodLoading] = useState(true)
 
   useEffect(() => {
     if (selectedMood) {
@@ -102,6 +111,44 @@ export default function App() {
     }
     loadTodayTasks()
   }, [])
+
+  useEffect(() => {
+    const today = new Date()
+    const dateKey = formatDateKey(today)
+    const unsub = onSnapshot(doc(db, "moodTracker", dateKey), (snap) => {
+      if (snap.exists()) {
+        setMoodData(snap.data())
+        const currentPeriod = getTimePeriod()
+        if (snap.data()[currentPeriod] && snap.data()[currentPeriod].mood) {
+          setSelectedMoodPeriod(currentPeriod)
+        } else {
+          setSelectedMoodPeriod(null)
+        }
+      } else {
+        setMoodData({})
+        setSelectedMoodPeriod(null)
+      }
+      setMoodLoading(false)
+    })
+    return () => unsub()
+  }, [])
+
+  async function handleMoodSelect(moodKey) {
+    const currentPeriod = getTimePeriod()
+    if (moodData[currentPeriod] && moodData[currentPeriod].mood) {
+      return
+    }
+    const today = new Date()
+    const dateKey = formatDateKey(today)
+    const docRef = doc(db, "moodTracker", dateKey)
+    await setDoc(docRef, {
+      [currentPeriod]: {
+        mood: moodKey,
+        time: serverTimestamp(),
+      },
+    }, { merge: true })
+    setSelectedMoodPeriod(currentPeriod)
+  }
 
   async function toggleTask(id) {
     const updatedTasks = tasks.map((t) =>
@@ -179,25 +226,37 @@ export default function App() {
       {/* 4. Mood Section */}
       <div>
         <p className="text-sm font-semibold mb-3">Как настроение?</p>
+        {selectedMoodPeriod && (
+          <p className="text-xs text-[#F46A3A] font-semibold mb-2">
+            Выбрано на {getMoodPeriodLabel(selectedMoodPeriod)}
+          </p>
+        )}
         <div className="flex justify-between gap-[10px]">
-          {moods.map((mood) => (
-            <button
-              key={mood.key}
-              onClick={() => setSelectedMood(mood.key)}
-              className={`flex flex-col items-center justify-center w-[68px] h-[88px] rounded-[18px] transition-all duration-300 ${
-                selectedMood === mood.key
-                  ? "bg-[#FFF2CC] scale-105 shadow-md"
-                  : "bg-[#FAFAFA] scale-100"
-              }`}
-            >
-              <div className="w-[56px] h-[56px]">
-                <MoodAnimation file={mood.file} />
-              </div>
-              <span className="text-[11px] font-medium text-gray-500 leading-tight mt-1">
-                {mood.label}
-              </span>
-            </button>
-          ))}
+          {moods.map((mood) => {
+            const isLocked = selectedMoodPeriod !== null && selectedMoodPeriod !== getTimePeriod()
+            const isSelected = moodData[getTimePeriod()] && moodData[getTimePeriod()].mood === mood.key
+            return (
+              <button
+                key={mood.key}
+                onClick={() => handleMoodSelect(mood.key)}
+                disabled={isLocked || isSelected}
+                className={`flex flex-col items-center justify-center w-[68px] h-[88px] rounded-[18px] transition-all duration-300 ${
+                  isSelected
+                    ? "bg-[#FFF2CC] scale-105 shadow-md"
+                    : isLocked
+                    ? "opacity-40 cursor-not-allowed"
+                    : "bg-[#FAFAFA] scale-100 hover:scale-105"
+                }`}
+              >
+                <div className={`w-[56px] h-[56px] ${isSelected ? "animate-pulse" : ""}`}>
+                  <MoodAnimation file={mood.file} />
+                </div>
+                <span className="text-[11px] font-medium text-gray-500 leading-tight mt-1">
+                  {mood.label}
+                </span>
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -315,7 +374,7 @@ export default function App() {
         {[
           { key: "home", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
           { key: "planner", icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
-          { key: "progress", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" },
+          { key: "progress", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2 2z" },
           { key: "water", icon: "M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" },
         ].map((tab) => (
           <button

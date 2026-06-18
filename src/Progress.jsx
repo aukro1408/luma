@@ -111,98 +111,110 @@ export default function Progress() {
 
   return (
     <div className="w-full min-h-screen bg-[#FAF7F2] flex flex-col px-4 py-5 gap-4 relative pb-24">
-      {/* 1. Profile Card */}
-      <div className="w-full rounded-[30px] p-5 shadow-lg relative overflow-hidden" style={{ background: "linear-gradient(135deg, #FF8A3D 0%, #F46A3A 100%)" }}>
-        <div className="flex items-center gap-4 relative z-10">
-          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/40 shadow-md flex-shrink-0">
-            <img src={avatar1} alt="Avatar" className="w-full h-full object-cover" />
-          </div>
-          <div>
-            <p className="text-lg font-bold text-white">Luma User 🌙</p>
-            <p className="text-sm text-white/85">Your daily progress</p>
-          </div>
-        </div>
-        <div className="absolute -right-4 -top-4 text-7xl opacity-15">⭐</div>
+      {/* Decorative Background Blobs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+        <div className="absolute top-20 -left-20 w-64 h-64 rounded-full opacity-30" style={{ background: "radial-gradient(circle, #FF8A3D 0%, transparent 70%)", filter: "blur(60px)" }}></div>
+        <div className="absolute top-1/2 -right-20 w-72 h-72 rounded-full opacity-25" style={{ background: "radial-gradient(circle, #F46A3A 0%, transparent 70%)", filter: "blur(70px)" }}></div>
+        <div className="absolute bottom-40 left-10 w-56 h-56 rounded-full opacity-20" style={{ background: "radial-gradient(circle, #CE93D8 0%, transparent 70%)", filter: "blur(50px)" }}></div>
       </div>
 
-      {/* 2. My Tasks */}
-      <div>
-        <p className="text-sm font-semibold mb-3 text-gray-800">Мои задачи</p>
-        <div className="flex flex-col gap-2.5">
-          <div className="w-full flex items-center gap-3 rounded-[22px] p-4 shadow-sm" style={{ background: "linear-gradient(135deg, #FFE5E5 0%, #FFD6D6 100%)" }}>
-            <span className="text-xl">📌</span>
-            <span className="text-sm font-semibold text-gray-700 flex-1">To Do</span>
-            <span className="text-sm font-bold text-gray-800 bg-white/60 px-3 py-1 rounded-full">{planned}</span>
+      {/* Content wrapper with z-index */}
+      <div className="relative z-10 flex flex-col gap-4">
+        {/* 1. Profile Card */}
+        <div className="w-full rounded-[30px] p-5 shadow-lg relative overflow-hidden" style={{ background: "linear-gradient(135deg, #FF8A3D 0%, #F46A3A 100%)" }}>
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/40 shadow-md flex-shrink-0">
+              <img src={avatar1} alt="Avatar" className="w-full h-full object-cover" />
+            </div>
+            <div>
+              <p className="text-lg font-bold text-white">Luma User 🌙</p>
+              <p className="text-sm text-white/85">Твой ежедневный прогресс</p>
+            </div>
           </div>
-          <div className="w-full flex items-center gap-3 rounded-[22px] p-4 shadow-sm" style={{ background: "linear-gradient(135deg, #FFF3E0 0%, #FFE8C9 100%)" }}>
-            <span className="text-xl">⏳</span>
-            <span className="text-sm font-semibold text-gray-700 flex-1">In Progress</span>
-            <span className="text-sm font-bold text-gray-800 bg-white/60 px-3 py-1 rounded-full">{inProgress}</span>
+          <div className="absolute -right-4 -top-4 text-7xl opacity-15">⭐</div>
+        </div>
+
+        {/* 2. My Tasks */}
+        <div>
+          <p className="text-sm font-semibold mb-3 text-gray-800">Мои задачи</p>
+          <div className="flex flex-col gap-2.5">
+            <div className="w-full flex items-center gap-3 rounded-[22px] p-4 shadow-sm backdrop-blur-sm" style={{ background: "linear-gradient(135deg, #FFE5E5 0%, #FFD6D6 100%)" }}>
+              <span className="text-xl">📌</span>
+              <span className="text-sm font-semibold text-gray-700 flex-1">Запланировано</span>
+              <span className="text-sm font-bold text-gray-800 bg-white/60 px-3 py-1 rounded-full">{planned}</span>
+            </div>
+            <div className="w-full flex items-center gap-3 rounded-[22px] p-4 shadow-sm backdrop-blur-sm" style={{ background: "linear-gradient(135deg, #FFF3E0 0%, #FFE8C9 100%)" }}>
+              <span className="text-xl">⏳</span>
+              <span className="text-sm font-semibold text-gray-700 flex-1">В процессе</span>
+              <span className="text-sm font-bold text-gray-800 bg-white/60 px-3 py-1 rounded-full">{inProgress}</span>
+            </div>
+            <div className="w-full flex items-center gap-3 rounded-[22px] p-4 shadow-sm backdrop-blur-sm" style={{ background: "linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%)" }}>
+              <span className="text-xl">✅</span>
+              <span className="text-sm font-semibold text-gray-700 flex-1">Выполнено</span>
+              <span className="text-sm font-bold text-gray-800 bg-white/60 px-3 py-1 rounded-full">{done}</span>
+            </div>
           </div>
-          <div className="w-full flex items-center gap-3 rounded-[22px] p-4 shadow-sm" style={{ background: "linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%)" }}>
-            <span className="text-xl">✅</span>
-            <span className="text-sm font-semibold text-gray-700 flex-1">Done</span>
-            <span className="text-sm font-bold text-gray-800 bg-white/60 px-3 py-1 rounded-full">{done}</span>
+        </div>
+
+        {/* 3. Progress Cards */}
+        <div className="flex gap-3">
+          {/* Water Card */}
+          <div className="flex-1 rounded-[28px] p-5 shadow-md flex flex-col items-center relative overflow-hidden" style={{ background: "linear-gradient(135deg, #4DD0E1 0%, #26C6DA 100%)" }}>
+            <div className="absolute top-2 right-2 text-5xl opacity-20">💧</div>
+            <div className="text-2xl mb-2 relative z-10">💧</div>
+            <p className="text-xs font-semibold text-white/90 mb-3 relative z-10">Вода</p>
+            <CircularProgress percent={waterPercent} color="#FFFFFF" bgColor="rgba(255,255,255,0.3)" />
+            <p className="text-xs text-white/90 text-center mt-2 relative z-10 font-medium">{waterMl} / 2000 ml</p>
+          </div>
+
+          {/* Productivity Card */}
+          <div className="flex-1 rounded-[28px] p-5 shadow-md flex flex-col items-center relative overflow-hidden" style={{ background: "linear-gradient(135deg, #FF8A80 0%, #FF6E6E 100%)" }}>
+            <div className="absolute top-2 right-2 text-5xl opacity-20">🎯</div>
+            <div className="text-2xl mb-2 relative z-10">🎯</div>
+            <p className="text-xs font-semibold text-white/90 mb-3 relative z-10">Продуктивность</p>
+            <CircularProgress percent={productivityPercent} color="#FFFFFF" bgColor="rgba(255,255,255,0.3)" />
+            <p className="text-xs text-white/90 text-center mt-2 relative z-10 font-medium">{done} / {planned} задач</p>
           </div>
         </div>
-      </div>
 
-      {/* 3. Progress Cards */}
-      <div className="flex gap-3">
-        {/* Water Card */}
-        <div className="flex-1 rounded-[28px] p-5 shadow-md flex flex-col items-center relative overflow-hidden" style={{ background: "linear-gradient(135deg, #4DD0E1 0%, #26C6DA 100%)" }}>
-          <div className="text-2xl mb-2 relative z-10">💧</div>
-          <p className="text-xs font-semibold text-white/90 mb-3 relative z-10">Water</p>
-          <CircularProgress percent={waterPercent} color="#FFFFFF" bgColor="rgba(255,255,255,0.3)" />
-          <p className="text-xs text-white/90 text-center mt-2 relative z-10 font-medium">{waterMl} / 2000 ml</p>
+        {/* 4. Streak Card */}
+        <div className="w-full rounded-[28px] p-5 shadow-md flex items-center gap-4 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #CE93D8 0%, #AB47BC 100%)" }}>
+          <div className="text-3xl relative z-10">🔥</div>
+          <div className="relative z-10">
+            <p className="text-sm font-bold text-white">Серия успеха</p>
+            <p className="text-xs text-white/85 font-medium">{streak} дней подряд</p>
+          </div>
+          <div className="absolute -right-3 -bottom-3 text-6xl opacity-20">⚡</div>
         </div>
 
-        {/* Productivity Card */}
-        <div className="flex-1 rounded-[28px] p-5 shadow-md flex flex-col items-center relative overflow-hidden" style={{ background: "linear-gradient(135deg, #FF8A80 0%, #FF6E6E 100%)" }}>
-          <div className="text-2xl mb-2 relative z-10">🎯</div>
-          <p className="text-xs font-semibold text-white/90 mb-3 relative z-10">Productivity</p>
-          <CircularProgress percent={productivityPercent} color="#FFFFFF" bgColor="rgba(255,255,255,0.3)" />
-          <p className="text-xs text-white/90 text-center mt-2 relative z-10 font-medium">{done} / {planned} tasks</p>
+        {/* Bottom Navigation */}
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[92%] bg-white rounded-[32px] shadow-xl flex items-center justify-around h-[86px] px-3 z-50">
+          {[
+            { key: "home", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
+            { key: "planner", icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
+            { key: "progress", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2 2z" },
+            { key: "water", icon: "M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex items-center gap-3 transition-all duration-300 ${
+                activeTab === tab.key
+                  ? "bg-[#F46A3A] text-white rounded-full px-6 py-3"
+                  : "text-[#9CA3AF] p-3"
+              }`}
+            >
+              <svg className="w-[30px] h-[30px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d={tab.icon} />
+              </svg>
+              {activeTab === tab.key && (
+                <span className="text-base font-semibold whitespace-nowrap">
+                  {tab.key === "home" ? "Главная" : tab.key === "planner" ? "План" : tab.key === "progress" ? "Прогресс" : "Вода"}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
-      </div>
-
-      {/* 4. Streak Card */}
-      <div className="w-full rounded-[28px] p-5 shadow-md flex items-center gap-4 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #CE93D8 0%, #AB47BC 100%)" }}>
-        <div className="text-3xl relative z-10">🔥</div>
-        <div className="relative z-10">
-          <p className="text-sm font-bold text-white">Streak</p>
-          <p className="text-xs text-white/85 font-medium">{streak} days in a row</p>
-        </div>
-        <div className="absolute -right-3 -bottom-3 text-6xl opacity-20">⚡</div>
-      </div>
-
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[92%] bg-white rounded-[32px] shadow-xl flex items-center justify-around h-[86px] px-3 z-50">
-        {[
-          { key: "home", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
-          { key: "planner", icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
-          { key: "progress", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2 2z" },
-          { key: "water", icon: "M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-3 transition-all duration-300 ${
-              activeTab === tab.key
-                ? "bg-[#F46A3A] text-white rounded-full px-6 py-3"
-                : "text-[#9CA3AF] p-3"
-            }`}
-          >
-            <svg className="w-[30px] h-[30px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d={tab.icon} />
-            </svg>
-            {activeTab === tab.key && (
-              <span className="text-base font-semibold whitespace-nowrap">
-                {tab.key === "home" ? "Главная" : tab.key === "planner" ? "План" : tab.key === "progress" ? "Прогресс" : "Вода"}
-              </span>
-            )}
-          </button>
-        ))}
       </div>
     </div>
   )

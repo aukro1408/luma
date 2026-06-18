@@ -1,6 +1,9 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { doc, onSnapshot, collection, query, where, getDocs } from "firebase/firestore"
+import { db } from "./firebase"
+import avatar1 from "./assets/states/avatar1.png"
 
-function CircularProgress({ percent, size = 80, strokeWidth = 6, color = "#FF8A3D", bgColor = "#F3F1ED" }) {
+function CircularProgress({ percent, size = 90, strokeWidth = 7, color = "#FF8A3D", bgColor = "rgba(255,255,255,0.35)" }) {
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
   const offset = circumference - (percent / 100) * circumference
@@ -27,11 +30,11 @@ function CircularProgress({ percent, size = 80, strokeWidth = 6, color = "#FF8A3
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           strokeLinecap="round"
-          className="transition-all duration-500"
+          className="transition-all duration-700"
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-base font-bold text-gray-800">{percent}%</span>
+        <span className="text-lg font-bold text-white drop-shadow-md">{percent}%</span>
       </div>
     </div>
   )
@@ -39,74 +42,138 @@ function CircularProgress({ percent, size = 80, strokeWidth = 6, color = "#FF8A3
 
 export default function Progress() {
   const [activeTab, setActiveTab] = useState("progress")
+  const [waterMl, setWaterMl] = useState(0)
+  const [tasks, setTasks] = useState([])
+  const [streak, setStreak] = useState(0)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const unsubWater = onSnapshot(doc(db, "waterProgress", "default"), (snap) => {
+      if (snap.exists()) {
+        setWaterMl(snap.data().amount || 0)
+      }
+    })
+
+    const today = new Date()
+    const dateKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
+    const unsubTasks = onSnapshot(doc(db, "planner", dateKey), (snap) => {
+      if (snap.exists()) {
+        setTasks(snap.data().tasks || [])
+      } else {
+        setTasks([])
+      }
+      setLoading(false)
+    })
+
+    return () => {
+      unsubWater()
+      unsubTasks()
+    }
+  }, [])
+
+  useEffect(() => {
+    async function calcStreak() {
+      const today = new Date()
+      let streakCount = 0
+      let checkDate = new Date(today)
+
+      for (let i = 0; i < 365; i++) {
+        const dateKey = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, "0")}-${String(checkDate.getDate()).padStart(2, "0")}`
+        const snap = await getDocs(query(collection(db, "planner"), where("__name__", "==", dateKey)))
+        
+        if (snap.empty) {
+          break
+        }
+        
+        const data = snap.docs[0].data()
+        const dayTasks = data.tasks || []
+        const allDone = dayTasks.length > 0 && dayTasks.every((t) => t.done)
+        
+        if (allDone) {
+          streakCount++
+          checkDate.setDate(checkDate.getDate() - 1)
+        } else {
+          break
+        }
+      }
+      
+      setStreak(streakCount)
+    }
+
+    calcStreak()
+  }, [])
+
+  const planned = tasks.length
+  const inProgress = tasks.filter((t) => !t.done).length
+  const done = tasks.filter((t) => t.done).length
+  const productivityPercent = planned > 0 ? Math.round((done / planned) * 100) : 0
+  const waterPercent = Math.min(Math.round((waterMl / 2000) * 100), 100)
 
   return (
     <div className="w-full min-h-screen bg-[#FAF7F2] flex flex-col px-4 py-5 gap-4 relative pb-24">
-      {/* 1. Hero Card */}
-      <div className="w-full rounded-[28px] p-6 bg-gradient-to-br from-[#FF8A3D] to-[#F46A3A] shadow-md relative overflow-hidden">
-        <div className="relative z-10">
-          <p className="text-xl font-bold text-white mb-1">Luma Progress 🌙</p>
-          <p className="text-sm text-white/80">Сегодня ты движешься вперед</p>
+      {/* 1. Profile Card */}
+      <div className="w-full rounded-[30px] p-5 shadow-lg relative overflow-hidden" style={{ background: "linear-gradient(135deg, #FF8A3D 0%, #F46A3A 100%)" }}>
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/40 shadow-md flex-shrink-0">
+            <img src={avatar1} alt="Avatar" className="w-full h-full object-cover" />
+          </div>
+          <div>
+            <p className="text-lg font-bold text-white">Luma User 🌙</p>
+            <p className="text-sm text-white/85">Your daily progress</p>
+          </div>
         </div>
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-6xl opacity-20">
-          📊
-        </div>
+        <div className="absolute -right-4 -top-4 text-7xl opacity-15">⭐</div>
       </div>
 
-      {/* 2. My Day Stats */}
+      {/* 2. My Tasks */}
       <div>
-        <p className="text-sm font-semibold mb-3 text-gray-800">Мой день</p>
-        <div className="flex flex-col gap-2">
-          <div className="w-full flex items-center gap-3 bg-white rounded-[18px] p-[14px] shadow-sm">
-            <span className="text-lg">📌</span>
-            <div className="flex-1 flex items-center justify-between">
-              <span className="text-sm text-gray-600">Запланировано</span>
-              <span className="text-sm font-semibold text-gray-800">8 задач</span>
-            </div>
+        <p className="text-sm font-semibold mb-3 text-gray-800">Мои задачи</p>
+        <div className="flex flex-col gap-2.5">
+          <div className="w-full flex items-center gap-3 rounded-[22px] p-4 shadow-sm" style={{ background: "linear-gradient(135deg, #FFE5E5 0%, #FFD6D6 100%)" }}>
+            <span className="text-xl">📌</span>
+            <span className="text-sm font-semibold text-gray-700 flex-1">To Do</span>
+            <span className="text-sm font-bold text-gray-800 bg-white/60 px-3 py-1 rounded-full">{planned}</span>
           </div>
-          <div className="w-full flex items-center gap-3 bg-white rounded-[18px] p-[14px] shadow-sm">
-            <span className="text-lg">⏳</span>
-            <div className="flex-1 flex items-center justify-between">
-              <span className="text-sm text-gray-600">В процессе</span>
-              <span className="text-sm font-semibold text-gray-800">3 задачи</span>
-            </div>
+          <div className="w-full flex items-center gap-3 rounded-[22px] p-4 shadow-sm" style={{ background: "linear-gradient(135deg, #FFF3E0 0%, #FFE8C9 100%)" }}>
+            <span className="text-xl">⏳</span>
+            <span className="text-sm font-semibold text-gray-700 flex-1">In Progress</span>
+            <span className="text-sm font-bold text-gray-800 bg-white/60 px-3 py-1 rounded-full">{inProgress}</span>
           </div>
-          <div className="w-full flex items-center gap-3 bg-white rounded-[18px] p-[14px] shadow-sm">
-            <span className="text-lg">✅</span>
-            <div className="flex-1 flex items-center justify-between">
-              <span className="text-sm text-gray-600">Выполнено</span>
-              <span className="text-sm font-semibold text-[#34C759]">5 задач</span>
-            </div>
+          <div className="w-full flex items-center gap-3 rounded-[22px] p-4 shadow-sm" style={{ background: "linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%)" }}>
+            <span className="text-xl">✅</span>
+            <span className="text-sm font-semibold text-gray-700 flex-1">Done</span>
+            <span className="text-sm font-bold text-gray-800 bg-white/60 px-3 py-1 rounded-full">{done}</span>
           </div>
         </div>
       </div>
 
-      {/* 3. Two side-by-side cards */}
+      {/* 3. Progress Cards */}
       <div className="flex gap-3">
         {/* Water Card */}
-        <div className="flex-1 bg-white rounded-[28px] p-5 shadow-sm flex flex-col items-center">
-          <div className="text-2xl mb-2">💧</div>
-          <p className="text-xs font-semibold text-gray-800 mb-3">Вода</p>
-          <CircularProgress percent={80} color="#FF8A3D" bgColor="#F3F1ED" />
-          <p className="text-xs text-gray-400 text-center mt-2">1600 / 2000 ml</p>
+        <div className="flex-1 rounded-[28px] p-5 shadow-md flex flex-col items-center relative overflow-hidden" style={{ background: "linear-gradient(135deg, #4DD0E1 0%, #26C6DA 100%)" }}>
+          <div className="text-2xl mb-2 relative z-10">💧</div>
+          <p className="text-xs font-semibold text-white/90 mb-3 relative z-10">Water</p>
+          <CircularProgress percent={waterPercent} color="#FFFFFF" bgColor="rgba(255,255,255,0.3)" />
+          <p className="text-xs text-white/90 text-center mt-2 relative z-10 font-medium">{waterMl} / 2000 ml</p>
         </div>
 
         {/* Productivity Card */}
-        <div className="flex-1 bg-white rounded-[28px] p-5 shadow-sm flex flex-col items-center">
-          <div className="text-2xl mb-2">🎯</div>
-          <p className="text-xs font-semibold text-gray-800 mb-3">Продуктивность</p>
-          <CircularProgress percent={65} color="#F4C64E" bgColor="#F3F1ED" />
-          <p className="text-xs text-gray-400 text-center mt-2">5 из 8 задач</p>
+        <div className="flex-1 rounded-[28px] p-5 shadow-md flex flex-col items-center relative overflow-hidden" style={{ background: "linear-gradient(135deg, #FF8A80 0%, #FF6E6E 100%)" }}>
+          <div className="text-2xl mb-2 relative z-10">🎯</div>
+          <p className="text-xs font-semibold text-white/90 mb-3 relative z-10">Productivity</p>
+          <CircularProgress percent={productivityPercent} color="#FFFFFF" bgColor="rgba(255,255,255,0.3)" />
+          <p className="text-xs text-white/90 text-center mt-2 relative z-10 font-medium">{done} / {planned} tasks</p>
         </div>
       </div>
 
       {/* 4. Streak Card */}
-      <div className="w-full bg-white rounded-[28px] p-5 shadow-sm flex items-center gap-4">
-        <div className="text-3xl">🔥</div>
-        <div>
-          <p className="text-sm font-semibold text-gray-800">Серия дней</p>
-          <p className="text-xs text-gray-400">4 дня подряд</p>
+      <div className="w-full rounded-[28px] p-5 shadow-md flex items-center gap-4 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #CE93D8 0%, #AB47BC 100%)" }}>
+        <div className="text-3xl relative z-10">🔥</div>
+        <div className="relative z-10">
+          <p className="text-sm font-bold text-white">Streak</p>
+          <p className="text-xs text-white/85 font-medium">{streak} days in a row</p>
         </div>
+        <div className="absolute -right-3 -bottom-3 text-6xl opacity-20">⚡</div>
       </div>
 
       {/* Bottom Navigation */}

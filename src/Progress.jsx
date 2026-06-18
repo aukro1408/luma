@@ -129,6 +129,7 @@ export default function Progress() {
             <div>
               <p className="text-lg font-bold text-white">Luma User 🌙</p>
               <p className="text-sm text-white/85">Твой ежедневный прогресс</p>
+              <p className="text-xs text-white/75 mt-1">Сегодня выполнено {done} задач</p>
             </div>
           </div>
           <div className="absolute -right-4 -top-4 text-7xl opacity-15">⭐</div>

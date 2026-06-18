@@ -10,6 +10,7 @@ import completedImg from "./assets/states/completed.jpg"
 import avatar1 from "./assets/states/avatar1.png"
 import WaterTracker from "./WaterTracker"
 import Plan from "./Plan"
+import Progress from "./Progress"
 
 function getTimePeriod() {
   const hour = new Date().getHours()
@@ -121,6 +122,8 @@ export default function App() {
         <WaterTracker />
       ) : activeTab === "planner" ? (
         <Plan />
+      ) : activeTab === "progress" ? (
+        <Progress />
       ) : (
         <div className="w-full min-h-screen bg-[#FAF7F2] flex flex-col px-4 py-5 gap-3 relative pb-24">
       {/* 1. Header */}

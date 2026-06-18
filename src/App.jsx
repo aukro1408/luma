@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import Lottie from "lottie-react"
-import { doc, getDoc } from "firebase/firestore"
+import { doc, getDoc, updateDoc } from "firebase/firestore"
 import { db } from "./firebase"
 import morning from "./assets/morning.jpg"
 import day from "./assets/day.jpg"
@@ -102,10 +102,14 @@ export default function App() {
     loadTodayTasks()
   }, [])
 
-  function toggleTask(id) {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t))
+  async function toggleTask(id) {
+    const updatedTasks = tasks.map((t) =>
+      t.id === id ? { ...t, done: !t.done } : t
     )
+    const dateKey = formatDateKey(new Date())
+    const docRef = doc(db, "planner", dateKey)
+    await updateDoc(docRef, { tasks: updatedTasks })
+    setTasks(updatedTasks)
   }
 
   const allDone = tasks.length > 0 && tasks.every((t) => t.done)

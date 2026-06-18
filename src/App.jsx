@@ -127,9 +127,10 @@ export default function App() {
   }
 
   const allDone = tasks.length > 0 && tasks.every((t) => t.done)
+  const [activeTab, setActiveTab] = useState("home")
 
   return (
-    <div className="w-[375px] min-h-screen bg-[#FAF7F2] flex flex-col px-4 py-5 gap-3 rounded-3xl relative pb-20">
+    <div className="w-full min-h-screen bg-[#FAF7F2] flex flex-col px-4 py-5 gap-3 relative pb-24">
       {/* 1. Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -263,7 +264,7 @@ export default function App() {
         {/* Floating add button */}
         <button
           onClick={() => setShowModal(true)}
-          className="absolute -right-2 -bottom-2 w-[52px] h-[52px] rounded-full bg-[#FF8A3D] shadow-lg flex items-center justify-center"
+          className="fixed bottom-28 right-4 w-[52px] h-[52px] rounded-full bg-[#FF8A3D] shadow-lg flex items-center justify-center z-40"
         >
           <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -308,24 +309,32 @@ export default function App() {
         </div>
       )}
 
-      {/* 6. Health Analytics */}
-      <div>
-        <p className="text-sm font-semibold mb-3">Health Analytics</p>
-        <div className="flex items-end justify-between h-24">
-          {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="w-12 rounded-xl bg-gray-200"
-              style={{ height: `${[70, 40, 90, 55][i]}%` }}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* 7. Bottom Navigation */}
-      <div className="flex justify-between bg-[#FAF7F2] py-3 sticky bottom-0 -mx-4 px-4">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="w-10 h-10 rounded-full bg-gray-200" />
+      {/* 6. Bottom Navigation */}
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[92%] bg-white rounded-[32px] shadow-xl flex items-center justify-around h-[86px] px-3 z-50">
+        {[
+          { key: "home", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
+          { key: "planner", icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
+          { key: "progress", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" },
+          { key: "water", icon: "M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`flex items-center gap-3 transition-all duration-300 ${
+              activeTab === tab.key
+                ? "bg-[#F46A3A] text-white rounded-full px-6 py-3"
+                : "text-[#9CA3AF] p-3"
+            }`}
+          >
+            <svg className="w-[30px] h-[30px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d={tab.icon} />
+            </svg>
+            {activeTab === tab.key && (
+              <span className="text-base font-semibold whitespace-nowrap">
+                {tab.key === "home" ? "Главная" : tab.key === "planner" ? "План" : tab.key === "progress" ? "Прогресс" : "Вода"}
+              </span>
+            )}
+          </button>
         ))}
       </div>
     </div>

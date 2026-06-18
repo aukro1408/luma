@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react"
 import Lottie from "lottie-react"
+import { doc, getDoc } from "firebase/firestore"
+import { db } from "./firebase"
 import morning from "./assets/morning.jpg"
 import day from "./assets/day.jpg"
 import evening from "./assets/evening.jpg"
@@ -50,12 +52,6 @@ const moods = [
   { key: "stress", label: "Стресс", file: "Stress.json" },
 ]
 
-const DEMO_TASKS = [
-  { id: 1, title: "Прочитать книгу", time: "30 минут", done: false },
-  { id: 2, title: "Сделать зарядку", time: "до 10:00", done: false },
-  { id: 3, title: "Позвонить другу", time: "до 18:00", done: false },
-]
-
 function MoodAnimation({ file }) {
   const [data, setData] = useState(null)
   useEffect(() => {
@@ -67,22 +63,11 @@ function MoodAnimation({ file }) {
   return <Lottie animationData={data} loop autoplay style={{ width: "100%", height: "100%" }} />
 }
 
-function getTodayKey() {
-  return new Date().toDateString()
-}
-
-function loadTasks() {
-  const key = getTodayKey()
-  try {
-    const stored = localStorage.getItem("luma_tasks_" + key)
-    if (stored) return JSON.parse(stored)
-  } catch {}
-  return null
-}
-
-function saveTasks(tasks) {
-  const key = getTodayKey()
-  localStorage.setItem("luma_tasks_" + key, JSON.stringify(tasks))
+function formatDateKey(date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, "0")
+  const d = String(date.getDate()).padStart(2, "0")
+  return `${y}-${m}-${d}`
 }
 
 export default function App() {
@@ -94,10 +79,7 @@ export default function App() {
   const defaultSelected = weekDays.findIndex((d) => d.fullDate.toDateString() === todayStr)
   const [selectedDay, setSelectedDay] = useState(defaultSelected)
   const [selectedMood, setSelectedMood] = useState(() => localStorage.getItem("luma_mood") || null)
-  const [tasks, setTasks] = useState(() => loadTasks() || DEMO_TASKS)
-  const [showModal, setShowModal] = useState(false)
-  const [newTitle, setNewTitle] = useState("")
-  const [newTime, setNewTime] = useState("")
+  const [tasks, setTasks] = useState([])
   const [showProfileModal, setShowProfileModal] = useState(false)
 
   useEffect(() => {
@@ -107,27 +89,23 @@ export default function App() {
   }, [selectedMood])
 
   useEffect(() => {
-    saveTasks(tasks)
-  }, [tasks])
+    async function loadTodayTasks() {
+      const dateKey = formatDateKey(new Date())
+      const docRef = doc(db, "planner", dateKey)
+      const docSnap = await getDoc(docRef)
+      if (docSnap.exists()) {
+        setTasks(docSnap.data().tasks || [])
+      } else {
+        setTasks([])
+      }
+    }
+    loadTodayTasks()
+  }, [])
 
   function toggleTask(id) {
     setTasks((prev) =>
       prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t))
     )
-  }
-
-  function addTask() {
-    if (!newTitle.trim()) return
-    const task = {
-      id: Date.now(),
-      title: newTitle.trim(),
-      time: newTime.trim() || "",
-      done: false,
-    }
-    setTasks((prev) => [...prev, task])
-    setNewTitle("")
-    setNewTime("")
-    setShowModal(false)
   }
 
   const allDone = tasks.length > 0 && tasks.every((t) => t.done)
@@ -220,7 +198,7 @@ export default function App() {
       <div className="relative">
         <p className="text-sm font-semibold mb-3">Что сегодня в планах</p>
 
-        {/* STATE 3 — All completed */}
+        {/* STATE — All completed */}
         {allDone && (
           <div className="flex flex-col items-center py-4">
             <div className="w-[90%] rounded-2xl overflow-hidden mb-3">
@@ -231,16 +209,15 @@ export default function App() {
           </div>
         )}
 
-        {/* STATE 1 — No tasks */}
+        {/* STATE — No tasks */}
         {!allDone && tasks.length === 0 && (
           <div className="flex flex-col items-center py-4">
             <img src={noTasks} alt="" className="w-40 h-40 object-cover rounded-2xl mb-3" />
-            <p className="text-sm font-semibold text-gray-800">✨ Сегодня можно выдохнуть</p>
-            <p className="text-xs text-gray-400 mt-1">Планов на сегодня нет.<br />Используй день для себя.</p>
+            <p className="text-sm font-semibold text-gray-800">✨ На сегодня задач нет</p>
           </div>
         )}
 
-        {/* STATE 2 — Active tasks */}
+        {/* STATE — Active tasks */}
         {!allDone && tasks.length > 0 && (
           <div className="flex flex-col gap-2">
             {tasks.map((t) => (
@@ -269,61 +246,14 @@ export default function App() {
                     {t.title}
                   </span>
                   <span className={`text-xs ${t.done ? "text-green-500" : "text-orange-400"}`}>
-                    {t.done ? "Выполнено" : t.time || "В процессе"}
+                    {t.done ? "Выполнено" : "В процессе"}
                   </span>
                 </div>
               </button>
             ))}
           </div>
         )}
-
-        {/* Floating add button */}
-        <button
-          onClick={() => setShowModal(true)}
-          className="fixed bottom-28 right-4 w-[52px] h-[52px] rounded-full bg-[#FF8A3D] shadow-lg flex items-center justify-center z-40"
-        >
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-        </button>
       </div>
-
-      {/* Add Task Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-[320px] bg-white rounded-3xl p-6 shadow-2xl animate-in">
-            <p className="text-base font-semibold mb-4">Новая задача</p>
-            <input
-              type="text"
-              placeholder="Что нужно сделать?"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              className="w-full bg-[#F3F1ED] rounded-xl px-4 py-3 text-sm outline-none mb-3"
-            />
-            <input
-              type="text"
-              placeholder="Время (необязательно)"
-              value={newTime}
-              onChange={(e) => setNewTime(e.target.value)}
-              className="w-full bg-[#F3F1ED] rounded-xl px-4 py-3 text-sm outline-none mb-5"
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowModal(false)}
-                className="flex-1 py-3 rounded-xl bg-[#F3F1ED] text-sm font-medium text-gray-500"
-              >
-                Отмена
-              </button>
-              <button
-                onClick={addTask}
-                className="flex-1 py-3 rounded-xl bg-[#FF8A3D] text-sm font-medium text-white"
-              >
-                Сохранить
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Profile Modal */}
       <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-4 transition-opacity duration-300 ${showProfileModal ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setShowProfileModal(false)}>

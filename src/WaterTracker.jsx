@@ -1,11 +1,19 @@
 import { useState, useEffect } from "react"
-import { doc, onSnapshot, setDoc } from "firebase/firestore"
+import { doc, onSnapshot, setDoc, updateDoc } from "firebase/firestore"
 import { db } from "./firebase"
 import waterImg from "./assets/water.png"
 
 const GOAL_ML = 1000
 const BAR_ML = 200
 const TOTAL_BARS = GOAL_ML / BAR_ML
+
+function getTodayDateKey() {
+  const today = new Date()
+  const y = today.getFullYear()
+  const m = String(today.getMonth() + 1).padStart(2, "0")
+  const d = String(today.getDate()).padStart(2, "0")
+  return `${y}-${m}-${d}`
+}
 
 function Bubbles() {
   const bubbles = Array.from({ length: 30 }, (_, i) => {
@@ -55,12 +63,28 @@ export default function WaterTracker() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, "waterProgress", "default"), (snap) => {
+    const todayKey = getTodayDateKey()
+    const docRef = doc(db, "waterProgress", "default")
+
+    const unsub = onSnapshot(docRef, (snap) => {
       if (snap.exists()) {
-        setMl(snap.data().amount || 0)
+        const data = snap.data()
+        const savedDate = data.date || ""
+        const savedAmount = data.amount || 0
+
+        if (savedDate !== todayKey) {
+          setMl(0)
+          updateDoc(docRef, { amount: 0, date: todayKey })
+        } else {
+          setMl(savedAmount)
+        }
+      } else {
+        setMl(0)
+        setDoc(docRef, { amount: 0, date: todayKey })
       }
       setLoading(false)
     })
+
     return () => unsub()
   }, [])
 
@@ -70,7 +94,7 @@ export default function WaterTracker() {
   async function addWater() {
     const next = Math.min(ml + BAR_ML, GOAL_ML)
     setMl(next)
-    await setDoc(doc(db, "waterProgress", "default"), { amount: next }, { merge: true })
+    await setDoc(doc(db, "waterProgress", "default"), { amount: next, date: getTodayDateKey() }, { merge: true })
     if (next >= GOAL_ML) {
       setShowPopup(true)
     }
@@ -78,7 +102,7 @@ export default function WaterTracker() {
 
   async function reset() {
     setMl(0)
-    await setDoc(doc(db, "waterProgress", "default"), { amount: 0 }, { merge: true })
+    await setDoc(doc(db, "waterProgress", "default"), { amount: 0, date: getTodayDateKey() }, { merge: true })
     setShowPopup(false)
   }
 

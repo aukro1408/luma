@@ -1,4 +1,6 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { doc, onSnapshot, setDoc } from "firebase/firestore"
+import { db } from "./firebase"
 import waterImg from "./assets/water.png"
 
 const GOAL_ML = 1000
@@ -48,22 +50,35 @@ function Bubbles() {
 }
 
 export default function WaterTracker() {
-  const [ml, setMl] = useState(600)
+  const [ml, setMl] = useState(0)
   const [showPopup, setShowPopup] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "waterProgress", "default"), (snap) => {
+      if (snap.exists()) {
+        setMl(snap.data().amount || 0)
+      }
+      setLoading(false)
+    })
+    return () => unsub()
+  }, [])
 
   const percent = Math.min(Math.round((ml / GOAL_ML) * 100), 100)
   const filledBars = Math.floor(ml / BAR_ML)
 
-  function addWater() {
+  async function addWater() {
     const next = Math.min(ml + BAR_ML, GOAL_ML)
     setMl(next)
+    await setDoc(doc(db, "waterProgress", "default"), { amount: next }, { merge: true })
     if (next >= GOAL_ML) {
       setShowPopup(true)
     }
   }
 
-  function reset() {
+  async function reset() {
     setMl(0)
+    await setDoc(doc(db, "waterProgress", "default"), { amount: 0 }, { merge: true })
     setShowPopup(false)
   }
 
@@ -89,7 +104,7 @@ export default function WaterTracker() {
         <div className="flex flex-col items-center -mt-4">
           <img src={waterImg} alt="" className="w-[95%] max-w-[400px] object-contain" />
           <div className="text-center -mt-6">
-            <p className="text-2xl font-bold text-gray-800">{ml} / {GOAL_ML} ml</p>
+            <p className="text-2xl font-bold text-gray-800">{loading ? "..." : `${ml} / ${GOAL_ML} ml`}</p>
             <p className="text-sm font-semibold text-[#F97344] mt-1">{percent}% завершено</p>
           </div>
         </div>

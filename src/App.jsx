@@ -5,6 +5,7 @@ import day from "./assets/day.jpg"
 import evening from "./assets/evening.jpg"
 import noTasks from "./assets/states/no-tasks.jpg"
 import completedImg from "./assets/states/completed.jpg"
+import WaterTracker from "./WaterTracker"
 
 function getTimePeriod() {
   const hour = new Date().getHours()
@@ -130,7 +131,11 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("home")
 
   return (
-    <div className="w-full min-h-screen bg-[#FAF7F2] flex flex-col px-4 py-5 gap-3 relative pb-24">
+    <>
+      {activeTab === "water" ? (
+        <WaterTracker />
+      ) : (
+        <div className="w-full min-h-screen bg-[#FAF7F2] flex flex-col px-4 py-5 gap-3 relative pb-24">
       {/* 1. Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -309,13 +314,16 @@ export default function App() {
         </div>
       )}
 
-      {/* 6. Bottom Navigation */}
+        </div>
+      )}
+
+      {/* Bottom Navigation (shared) */}
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[92%] bg-white rounded-[32px] shadow-xl flex items-center justify-around h-[86px] px-3 z-50">
         {[
           { key: "home", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
           { key: "planner", icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
           { key: "progress", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" },
-          { key: "water", icon: "M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" },
+          { key: "water", icon: "M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -337,6 +345,6 @@ export default function App() {
           </button>
         ))}
       </div>
-    </div>
+    </>
   )
 }

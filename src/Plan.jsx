@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react"
-import { doc, getDoc, setDoc } from "firebase/firestore"
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore"
 import { db } from "./firebase"
 
 const MONTHS = [
@@ -63,6 +63,14 @@ export default function Plan() {
   function selectDate(date) {
     setSelectedDate(date)
     loadTasks(date)
+  }
+
+  async function deleteTask(id) {
+    const updatedTasks = tasks.filter((t) => t.id !== id)
+    const dateKey = formatDateKey(selectedDate)
+    const docRef = doc(db, "planner", dateKey)
+    await updateDoc(docRef, { tasks: updatedTasks })
+    setTasks(updatedTasks)
   }
 
   async function toggleTask(id) {
@@ -225,6 +233,16 @@ export default function Plan() {
                     </span>
                   )}
                 </div>
+
+                {/* Delete button */}
+                <button
+                  onClick={() => deleteTask(t.id)}
+                  className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-400 transition-colors mt-0.5"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
               </div>
             ))}
           </div>

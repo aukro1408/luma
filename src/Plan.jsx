@@ -43,6 +43,10 @@ export default function Plan() {
   const [showModal, setShowModal] = useState(false)
   const [newTitle, setNewTitle] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("Здоровье")
+  const [editingTask, setEditingTask] = useState(null)
+  const [editTitle, setEditTitle] = useState("")
+  const [editTime, setEditTime] = useState("")
+  const [editCategory, setEditCategory] = useState("Здоровье")
   const scrollRef = useRef(null)
 
   const currentMonthLabel = useMemo(() => {
@@ -63,6 +67,34 @@ export default function Plan() {
   function selectDate(date) {
     setSelectedDate(date)
     loadTasks(date)
+  }
+
+  function openEditModal(task) {
+    setEditingTask(task)
+    setEditTitle(task.title)
+    setEditTime(task.time || "")
+    setEditCategory(task.category || "Здоровье")
+  }
+
+  function closeEditModal() {
+    setEditingTask(null)
+    setEditTitle("")
+    setEditTime("")
+    setEditCategory("Здоровье")
+  }
+
+  async function saveEdit() {
+    if (!editTitle.trim() || !editingTask) return
+    const updatedTasks = tasks.map((t) =>
+      t.id === editingTask.id
+        ? { ...t, title: editTitle.trim(), time: editTime.trim(), category: editCategory }
+        : t
+    )
+    const dateKey = formatDateKey(selectedDate)
+    const docRef = doc(db, "planner", dateKey)
+    await updateDoc(docRef, { tasks: updatedTasks })
+    setTasks(updatedTasks)
+    closeEditModal()
   }
 
   async function deleteTask(id) {
@@ -234,6 +266,16 @@ export default function Plan() {
                   )}
                 </div>
 
+                {/* Edit button */}
+                <button
+                  onClick={() => openEditModal(t)}
+                  className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-gray-300 hover:text-blue-400 transition-colors mt-0.5"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+
                 {/* Delete button */}
                 <button
                   onClick={() => deleteTask(t.id)}
@@ -258,6 +300,61 @@ export default function Plan() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
         </svg>
       </button>
+
+      {/* Edit Task Modal */}
+      {editingTask && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-[320px] bg-white rounded-3xl p-6 shadow-2xl">
+            <p className="text-base font-semibold mb-4">Редактировать задачу</p>
+            <input
+              type="text"
+              placeholder="Название задачи"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              className="w-full bg-[#F3F1ED] rounded-xl px-4 py-3 text-sm outline-none mb-3"
+            />
+            <input
+              type="text"
+              placeholder="Время"
+              value={editTime}
+              onChange={(e) => setEditTime(e.target.value)}
+              className="w-full bg-[#F3F1ED] rounded-xl px-4 py-3 text-sm outline-none mb-3"
+            />
+            <div className="mb-4">
+              <p className="text-xs text-gray-500 mb-2">Категория</p>
+              <div className="flex flex-wrap gap-2">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setEditCategory(cat)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                      editCategory === cat
+                        ? "bg-[#F4C64E] text-black"
+                        : "bg-[#F3F1ED] text-gray-600"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={closeEditModal}
+                className="flex-1 py-3 rounded-xl bg-[#F3F1ED] text-sm font-medium text-gray-500"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={saveEdit}
+                className="flex-1 py-3 rounded-xl bg-[#FF8A3D] text-sm font-medium text-white"
+              >
+                Сохранить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Task Modal */}
       {showModal && (

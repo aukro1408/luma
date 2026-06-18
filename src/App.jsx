@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import Lottie from "lottie-react"
-import { doc, getDoc, updateDoc, setDoc, serverTimestamp } from "firebase/firestore"
+import { doc, getDoc, updateDoc, setDoc, serverTimestamp, onSnapshot } from "firebase/firestore"
 import { db } from "./firebase"
 import morning from "./assets/morning.jpg"
 import day from "./assets/day.jpg"

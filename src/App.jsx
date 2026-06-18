@@ -277,9 +277,9 @@ export default function App() {
 
         {/* STATE — No tasks */}
         {!allDone && tasks.length === 0 && (
-          <div className="flex flex-col items-center py-4">
-            <img src={noTasks} alt="" className="w-40 h-40 object-cover rounded-2xl mb-3" />
-            <p className="text-sm font-semibold text-gray-800">✨ На сегодня задач нет</p>
+          <div className="flex flex-col items-center mt-8 mb-6">
+            <img src={noTasks} alt="" className="w-80 h-80 object-cover rounded-3xl mb-6" />
+            <p className="text-lg text-gray-700 font-medium text-center">✨ На сегодня задач нет</p>
           </div>
         )}
 

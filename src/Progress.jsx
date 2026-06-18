@@ -169,7 +169,7 @@ export default function Progress() {
   const waterPercent = Math.min(Math.round((waterMl / 2000) * 100), 100)
 
   return (
-    <div className="w-full min-h-screen bg-[#FAF7F2] flex flex-col px-4 py-5 gap-4 relative pb-24">
+    <div className="w-full min-h-screen bg-[#FAF7F2] flex flex-col px-4 py-5 gap-4 relative pb-32">
       {/* Decorative Background Blobs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
         <div className="absolute top-20 -left-20 w-64 h-64 rounded-full opacity-30" style={{ background: "radial-gradient(circle, #FF8A3D 0%, transparent 70%)", filter: "blur(60px)" }}></div>

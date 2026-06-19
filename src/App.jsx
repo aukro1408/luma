@@ -11,6 +11,7 @@ import avatar1 from "./assets/states/avatar1.png"
 import WaterTracker from "./WaterTracker"
 import Plan from "./Plan"
 import Progress from "./Progress"
+import Weather from "./Weather"
 
 function getTimePeriod() {
   const hour = new Date().getHours()
@@ -91,6 +92,7 @@ export default function App() {
   const [moodData, setMoodData] = useState({})
   const [selectedMoodPeriod, setSelectedMoodPeriod] = useState(null)
   const [moodLoading, setMoodLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("home")
 
   useEffect(() => {
     if (selectedMood) {
@@ -161,18 +163,9 @@ export default function App() {
   }
 
   const allDone = tasks.length > 0 && tasks.every((t) => t.done)
-  const [activeTab, setActiveTab] = useState("home")
 
-  return (
-    <>
-      {activeTab === "water" ? (
-        <WaterTracker />
-      ) : activeTab === "planner" ? (
-        <Plan />
-      ) : activeTab === "progress" ? (
-        <Progress />
-      ) : (
-        <div className="w-full min-h-screen bg-[#FAF7F2] flex flex-col px-4 py-5 gap-3 relative pb-24">
+  const homePage = (
+    <div className="w-full min-h-screen bg-[#FAF7F2] flex flex-col px-4 py-5 gap-3 relative pb-24">
       {/* 1. Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -365,9 +358,16 @@ export default function App() {
           </p>
         </div>
       </div>
+    </div>
+  )
 
-        </div>
-      )}
+  return (
+    <>
+      {activeTab === "home" && homePage}
+      {activeTab === "planner" && <Plan />}
+      {activeTab === "progress" && <Progress />}
+      {activeTab === "water" && <WaterTracker />}
+      {activeTab === "weather" && <Weather />}
 
       {/* Bottom Navigation (shared) */}
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[92%] bg-white rounded-[32px] shadow-xl flex items-center justify-around h-[86px] px-3 z-50">
@@ -376,6 +376,7 @@ export default function App() {
           { key: "planner", icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
           { key: "progress", icon: "M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
           { key: "water", icon: "M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" },
+          { key: "weather", icon: "M3 15a4 4 0 004 4 9 9 0 10-8-9.5M3 15l3-3m0 0l3-3m-3 3l3 3m-3-3l-3 3" },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -391,7 +392,7 @@ export default function App() {
             </svg>
             {activeTab === tab.key && (
               <span className="text-base font-semibold whitespace-nowrap">
-                {tab.key === "home" ? "Главная" : tab.key === "planner" ? "План" : tab.key === "progress" ? "Прогресс" : "Вода"}
+                {tab.key === "home" ? "Главная" : tab.key === "planner" ? "План" : tab.key === "progress" ? "Прогресс" : tab.key === "water" ? "Вода" : "Погода"}
               </span>
             )}
           </button>

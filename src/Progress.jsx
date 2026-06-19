@@ -166,7 +166,7 @@ export default function Progress() {
   const inProgress = tasks.filter((t) => !t.done).length
   const done = tasks.filter((t) => t.done).length
   const productivityPercent = planned > 0 ? Math.round((done / planned) * 100) : 0
-  const waterPercent = Math.min(Math.round((waterMl / 2000) * 100), 100)
+  const waterPercent = Math.min(Math.round((waterMl / 1000) * 100), 100)
 
   return (
     <div className="w-full min-h-screen bg-[#FAF7F2] flex flex-col px-4 py-5 gap-4 relative pb-32">
@@ -224,7 +224,7 @@ export default function Progress() {
             <div className="text-2xl mb-2 relative z-10">💧</div>
             <p className="text-xs font-semibold text-white/90 mb-3 relative z-10">Вода</p>
             <CircularProgress percent={waterPercent} color="#FFFFFF" bgColor="rgba(255,255,255,0.3)" />
-            <p className="text-xs text-white/90 text-center mt-2 relative z-10 font-medium">{waterMl} / 2000 ml</p>
+            <p className="text-xs text-white/90 text-center mt-2 relative z-10 font-medium">{waterMl} / 1000 ml</p>
           </div>
 
           {/* Productivity Card */}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import Lottie from "lottie-react"
+import { CloudSun } from "lucide-react"
 import { doc, getDoc, updateDoc, setDoc, serverTimestamp, onSnapshot } from "firebase/firestore"
 import { db } from "./firebase"
 import { getCurrentUser, saveUser, clearUser, generateUserId } from "./user"
@@ -151,6 +152,13 @@ export default function App() {
   }, [user])
 
   useEffect(() => {
+    if (!user) {
+      setMoodData({})
+      setSelectedMoodPeriod(null)
+      setMoodLoading(false)
+      return
+    }
+
     const today = new Date()
     const dateKey = formatDateKey(today)
     const docRef = getDocRef(user, "moodTracker", dateKey)
@@ -173,6 +181,8 @@ export default function App() {
   }, [user])
 
   async function handleMoodSelect(moodKey) {
+    if (!user) return
+
     const currentPeriod = getTimePeriod()
     if (moodData[currentPeriod] && moodData[currentPeriod].mood) {
       return
@@ -241,6 +251,7 @@ export default function App() {
       {/* 3. Hero Card */}
       <div className="relative w-full h-[260px] rounded-[28px] overflow-hidden transition-opacity duration-500" key={period}>
         <img src={hero.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <span className="luma-watermark">LUMA</span>
         <div
           className="absolute inset-0"
           style={{
@@ -432,7 +443,7 @@ export default function App() {
           { key: "planner", icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
           { key: "progress", icon: "M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
           { key: "water", icon: "M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" },
-          { key: "weather", icon: "M3 15a4 4 0 004 4a9 9 0 10-8-9.5M3 15l3-3m0 0l3-3m-3 3l3 3m-3-3l-3 3" },
+          { key: "weather", icon: "cloud-sun" },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -443,9 +454,13 @@ export default function App() {
                 : "text-[#9CA3AF] p-3"
             }`}
           >
-            <svg className="w-[30px] h-[30px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d={tab.icon} />
-            </svg>
+            {tab.key === "weather" ? (
+              <CloudSun className="w-[30px] h-[30px]" strokeWidth={2} />
+            ) : (
+              <svg className="w-[30px] h-[30px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d={tab.icon} />
+              </svg>
+            )}
             {activeTab === tab.key && (
               <span className="text-base font-semibold whitespace-nowrap">
                 {tab.key === "home" ? "Главная" : tab.key === "planner" ? "План" : tab.key === "progress" ? "Прогресс" : tab.key === "water" ? "Вода" : "Погода"}

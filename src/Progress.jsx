@@ -70,11 +70,11 @@ export default function Progress({ user }) {
     return doc(db, collection, docId)
   }
 
-  function getUserCollectionRef(collection) {
+  function getUserCollectionRef(collectionName) {
     if (user) {
-      return collection(db, "users", user.id, collection)
+      return collection(db, "users", user.id, collectionName)
     }
-    return collection(db, collection)
+    return collection(db, collectionName)
   }
 
   useEffect(() => {
@@ -155,9 +155,6 @@ export default function Progress({ user }) {
         date.setDate(today.getDate() - i)
         const dateKey = formatDateKey(date)
         
-        const moodCol = getUserCollectionRef("moodTracker")
-        const snap = await getDocs(query(moodCol, where("__name__", "==", dateKey)))
-        
         const dayData = {
           date: date,
           dateKey: dateKey,
@@ -167,16 +164,24 @@ export default function Progress({ user }) {
           evening: null,
         }
         
-        if (!snap.empty) {
-          const data = snap.docs[0].data()
-          if (data.morning && data.morning.mood) {
-            dayData.morning = moodEmojis[data.morning.mood] || "❓"
-          }
-          if (data.day && data.day.mood) {
-            dayData.day = moodEmojis[data.day.mood] || "❓"
-          }
-          if (data.evening && data.evening.mood) {
-            dayData.evening = moodEmojis[data.evening.mood] || "❓"
+        if (user) {
+          const moodCol = getUserCollectionRef("moodTracker")
+          console.log("Progress mood query - userId:", user.id, "path:", user ? `users/${user.id}/moodTracker` : "moodTracker (global)")
+          const snap = await getDocs(query(moodCol, where("__name__", "==", dateKey)))
+          console.log("Progress mood query - dateKey:", dateKey, "docs returned:", snap.size)
+          
+          if (!snap.empty) {
+            const data = snap.docs[0].data()
+            console.log("Progress mood data:", data)
+            if (data.morning && data.morning.mood) {
+              dayData.morning = moodEmojis[data.morning.mood] || "❓"
+            }
+            if (data.day && data.day.mood) {
+              dayData.day = moodEmojis[data.day.mood] || "❓"
+            }
+            if (data.evening && data.evening.mood) {
+              dayData.evening = moodEmojis[data.evening.mood] || "❓"
+            }
           }
         }
         

@@ -55,7 +55,7 @@ function formatDateKey(date) {
   return `${y}-${m}-${d}`
 }
 
-export default function Progress() {
+export default function Progress({ user }) {
   const [activeTab, setActiveTab] = useState("progress")
   const [waterMl, setWaterMl] = useState(0)
   const [tasks, setTasks] = useState([])
@@ -63,16 +63,41 @@ export default function Progress() {
   const [loading, setLoading] = useState(true)
   const [weekMoods, setWeekMoods] = useState([])
 
+  function getUserDocPath(collection, docId) {
+    if (user) {
+      return doc(db, "users", user.id, collection, docId)
+    }
+    return doc(db, collection, docId)
+  }
+
+  function getUserCollectionRef(collection) {
+    if (user) {
+      return collection(db, "users", user.id, collection)
+    }
+    return collection(db, collection)
+  }
+
   useEffect(() => {
-    const unsubWater = onSnapshot(doc(db, "waterProgress", "default"), (snap) => {
+    const today = new Date()
+    const dateKey = formatDateKey(today)
+    const waterRef = getUserDocPath("waterProgress", dateKey)
+    
+    console.log("Progress waterRef:", waterRef.path)
+    
+    const unsubWater = onSnapshot(waterRef, (snap) => {
+      console.log("Progress water snap:", snap.exists(), snap.data())
       if (snap.exists()) {
-        setWaterMl(snap.data().amount || 0)
+        const amount = snap.data().amount || 0
+        console.log("Progress water amount:", amount)
+        setWaterMl(amount)
+      } else {
+        console.log("Progress water: no data, setting 0")
+        setWaterMl(0)
       }
     })
 
-    const today = new Date()
-    const dateKey = formatDateKey(today)
-    const unsubTasks = onSnapshot(doc(db, "planner", dateKey), (snap) => {
+    const tasksRef = getUserDocPath("planner", dateKey)
+    const unsubTasks = onSnapshot(tasksRef, (snap) => {
       if (snap.exists()) {
         setTasks(snap.data().tasks || [])
       } else {
@@ -85,7 +110,7 @@ export default function Progress() {
       unsubWater()
       unsubTasks()
     }
-  }, [])
+  }, [user])
 
   useEffect(() => {
     async function calcStreak() {
@@ -95,7 +120,8 @@ export default function Progress() {
 
       for (let i = 0; i < 365; i++) {
         const dateKey = formatDateKey(checkDate)
-        const snap = await getDocs(query(collection(db, "planner"), where("__name__", "==", dateKey)))
+        const plannerCol = getUserCollectionRef("planner")
+        const snap = await getDocs(query(plannerCol, where("__name__", "==", dateKey)))
         
         if (snap.empty) {
           break
@@ -117,7 +143,7 @@ export default function Progress() {
     }
 
     calcStreak()
-  }, [])
+  }, [user])
 
   useEffect(() => {
     async function loadWeekMoods() {
@@ -129,7 +155,8 @@ export default function Progress() {
         date.setDate(today.getDate() - i)
         const dateKey = formatDateKey(date)
         
-        const snap = await getDocs(query(collection(db, "moodTracker"), where("__name__", "==", dateKey)))
+        const moodCol = getUserCollectionRef("moodTracker")
+        const snap = await getDocs(query(moodCol, where("__name__", "==", dateKey)))
         
         const dayData = {
           date: date,
@@ -160,13 +187,15 @@ export default function Progress() {
     }
 
     loadWeekMoods()
-  }, [])
+  }, [user])
 
   const planned = tasks.length
   const inProgress = tasks.filter((t) => !t.done).length
   const done = tasks.filter((t) => t.done).length
   const productivityPercent = planned > 0 ? Math.round((done / planned) * 100) : 0
   const waterPercent = Math.min(Math.round((waterMl / 1000) * 100), 100)
+
+  const displayName = user ? user.name : "Luma User"
 
   return (
     <div className="w-full min-h-screen bg-[#FAF7F2] flex flex-col px-4 py-5 gap-4 relative pb-32">
@@ -186,7 +215,7 @@ export default function Progress() {
               <img src={avatar1} alt="Avatar" className="w-full h-full object-cover" />
             </div>
             <div>
-              <p className="text-lg font-bold text-white">Luma User 🌙</p>
+              <p className="text-lg font-bold text-white">{displayName} 🌙</p>
               <p className="text-sm text-white/85">Твой ежедневный прогресс</p>
               <p className="text-xs text-white/75 mt-1">Сегодня выполнено {done} задач</p>
             </div>
@@ -276,7 +305,7 @@ export default function Progress() {
           {[
             { key: "home", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
             { key: "planner", icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
-            { key: "progress", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2 2z" },
+            { key: "progress", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 002 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2 2z" },
             { key: "water", icon: "M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" },
           ].map((tab) => (
             <button

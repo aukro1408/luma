@@ -57,14 +57,21 @@ function Bubbles() {
   )
 }
 
-export default function WaterTracker() {
+export default function WaterTracker({ user }) {
   const [ml, setMl] = useState(0)
   const [showPopup, setShowPopup] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  function getWaterDocRef() {
     const todayKey = getTodayDateKey()
-    const docRef = doc(db, "waterProgress", "default")
+    if (user) {
+      return doc(db, "users", user.id, "waterProgress", todayKey)
+    }
+    return doc(db, "waterProgress", "default")
+  }
+
+  useEffect(() => {
+    const docRef = getWaterDocRef()
 
     const unsub = onSnapshot(docRef, (snap) => {
       if (snap.exists()) {
@@ -72,21 +79,21 @@ export default function WaterTracker() {
         const savedDate = data.date || ""
         const savedAmount = data.amount || 0
 
-        if (savedDate !== todayKey) {
+        if (savedDate !== getTodayDateKey()) {
           setMl(0)
-          updateDoc(docRef, { amount: 0, date: todayKey })
+          updateDoc(docRef, { amount: 0, date: getTodayDateKey() })
         } else {
           setMl(savedAmount)
         }
       } else {
         setMl(0)
-        setDoc(docRef, { amount: 0, date: todayKey })
+        setDoc(docRef, { amount: 0, date: getTodayDateKey() })
       }
       setLoading(false)
     })
 
     return () => unsub()
-  }, [])
+  }, [user])
 
   const percent = Math.min(Math.round((ml / GOAL_ML) * 100), 100)
   const filledBars = Math.floor(ml / BAR_ML)
@@ -94,7 +101,8 @@ export default function WaterTracker() {
   async function addWater() {
     const next = Math.min(ml + BAR_ML, GOAL_ML)
     setMl(next)
-    await setDoc(doc(db, "waterProgress", "default"), { amount: next, date: getTodayDateKey() }, { merge: true })
+    const docRef = getWaterDocRef()
+    await setDoc(docRef, { amount: next, date: getTodayDateKey() }, { merge: true })
     if (next >= GOAL_ML) {
       setShowPopup(true)
     }
@@ -102,7 +110,8 @@ export default function WaterTracker() {
 
   async function reset() {
     setMl(0)
-    await setDoc(doc(db, "waterProgress", "default"), { amount: 0, date: getTodayDateKey() }, { merge: true })
+    const docRef = getWaterDocRef()
+    await setDoc(docRef, { amount: 0, date: getTodayDateKey() }, { merge: true })
     setShowPopup(false)
   }
 

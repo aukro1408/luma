@@ -36,7 +36,7 @@ function formatDateKey(date) {
   return `${y}-${m}-${d}`
 }
 
-export default function Plan() {
+export default function Plan({ user }) {
   const today = new Date()
   const [selectedDate, setSelectedDate] = useState(today)
   const [tasks, setTasks] = useState([])
@@ -53,9 +53,16 @@ export default function Plan() {
     return `${MONTHS[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`
   }, [selectedDate])
 
-  async function loadTasks(date) {
+  function getPlannerDocRef(date) {
     const dateKey = formatDateKey(date)
-    const docRef = doc(db, "planner", dateKey)
+    if (user) {
+      return doc(db, "users", user.id, "planner", dateKey)
+    }
+    return doc(db, "planner", dateKey)
+  }
+
+  async function loadTasks(date) {
+    const docRef = getPlannerDocRef(date)
     const docSnap = await getDoc(docRef)
     if (docSnap.exists()) {
       setTasks(docSnap.data().tasks || [])
@@ -90,8 +97,7 @@ export default function Plan() {
         ? { ...t, title: editTitle.trim(), time: editTime.trim(), category: editCategory }
         : t
     )
-    const dateKey = formatDateKey(selectedDate)
-    const docRef = doc(db, "planner", dateKey)
+    const docRef = getPlannerDocRef(selectedDate)
     await updateDoc(docRef, { tasks: updatedTasks })
     setTasks(updatedTasks)
     closeEditModal()
@@ -99,8 +105,7 @@ export default function Plan() {
 
   async function deleteTask(id) {
     const updatedTasks = tasks.filter((t) => t.id !== id)
-    const dateKey = formatDateKey(selectedDate)
-    const docRef = doc(db, "planner", dateKey)
+    const docRef = getPlannerDocRef(selectedDate)
     await updateDoc(docRef, { tasks: updatedTasks })
     setTasks(updatedTasks)
   }
@@ -110,8 +115,7 @@ export default function Plan() {
       t.id === id ? { ...t, done: !t.done } : t
     )
     setTasks(updatedTasks)
-    const dateKey = formatDateKey(selectedDate)
-    const docRef = doc(db, "planner", dateKey)
+    const docRef = getPlannerDocRef(selectedDate)
     await setDoc(docRef, { tasks: updatedTasks }, { merge: true })
   }
 
@@ -125,8 +129,7 @@ export default function Plan() {
       category: selectedCategory,
     }
     const updatedTasks = [...tasks, task]
-    const dateKey = formatDateKey(selectedDate)
-    const docRef = doc(db, "planner", dateKey)
+    const docRef = getPlannerDocRef(selectedDate)
     await setDoc(docRef, { tasks: updatedTasks }, { merge: true })
     setTasks(updatedTasks)
     setNewTitle("")
@@ -159,18 +162,9 @@ export default function Plan() {
   return (
     <div className="w-full min-h-screen bg-[#FAF7F2] flex flex-col px-4 py-5 gap-4 relative pb-24">
       {/* 1. Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs text-gray-400">Организуй день</p>
-          <p className="text-lg font-semibold">План дня ✨</p>
-        </div>
-        <div className="w-[48px] h-[48px] p-0 overflow-hidden rounded-full bg-gray-200">
-          <img
-            src=""
-            alt="Avatar"
-            className="w-full h-full object-cover"
-          />
-        </div>
+      <div>
+        <p className="text-xs text-gray-400">Организуй день</p>
+        <p className="text-lg font-semibold">План дня ✨</p>
       </div>
 
       {/* 2. Horizontal Scrollable Date Selector */}

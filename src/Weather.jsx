@@ -2,7 +2,7 @@ import { useState, useEffect } from "react"
 
 const LAT = 46.8433
 const LON = 30.0792
-const API_URL = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&daily=temperature_2m_max,weather_code,precipitation_probability_max,uv_index_max&forecast_days=5&timezone=auto`
+const API_URL = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&daily=temperature_2m_max,weather_code,precipitation_probability_max,uv_index_max,sunrise,sunset&forecast_days=5&timezone=auto`
 
 function getTimePeriod() {
   const hour = new Date().getHours()
@@ -15,6 +15,14 @@ function weatherText(code) {
   if (code <= 3) return "Облачно"
   if (code <= 61) return "Небольшой дождь"
   return "Гроза"
+}
+
+function formatTime(timeStr) {
+  if (!timeStr) return "--"
+  const date = new Date(timeStr)
+  const hours = String(date.getHours()).padStart(2, "0")
+  const minutes = String(date.getMinutes()).padStart(2, "0")
+  return `${hours}:${minutes}`
 }
 
 function weatherIcon(code) {
@@ -173,17 +181,33 @@ export default function Weather() {
         transition: "1s ease",
       }}
     >
+      {/* Video Background */}
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="fixed inset-0 w-full h-full object-cover"
+        style={{ zIndex: 0 }}
+      >
+        <source src="https://cdn.pixabay.com/video/2023/07/17/171942-846113545_large.mp4" type="video/mp4" />
+      </video>
+
+      {/* Dark overlay for readability */}
+      <div className="fixed inset-0" style={{ background: "rgba(0,0,0,0.25)", zIndex: 1 }} />
+
+      {/* Night mode overlay */}
       {!isDay && (
         <div
           className="fixed inset-0 pointer-events-none"
-          style={{ background: "#111827", transition: "1s ease", zIndex: 0 }}
+          style={{ background: "rgba(17, 24, 39, 0.55)", transition: "1s ease", zIndex: 2 }}
         />
       )}
 
+      {/* Content */}
       <div className="relative z-10 flex flex-col gap-5" style={{ transition: "1s ease" }}>
         {/* Header */}
         <div className="fade" style={{ animationDelay: "0s" }}>
-          <p className="subtitle">Твой комфорт сегодня</p>
           <p className="title">Погода</p>
         </div>
 
@@ -249,8 +273,24 @@ export default function Weather() {
           </div>
         )}
 
+        {/* Sunrise / Sunset */}
+        {!loading && (
+          <div className="grid">
+            <div className="card fade" style={{ animationDelay: "0.45s" }}>
+              <div className="icon">🌅</div>
+              <div className="label">Восход</div>
+              <div className="value">{formatTime(daily.sunrise?.[0])}</div>
+            </div>
+            <div className="card fade" style={{ animationDelay: "0.5s" }}>
+              <div className="icon">🌇</div>
+              <div className="label">Закат</div>
+              <div className="value">{formatTime(daily.sunset?.[0])}</div>
+            </div>
+          </div>
+        )}
+
         {/* Forecast */}
-        <div className="section fade" style={{ animationDelay: "0.45s" }}>5 дней</div>
+        <div className="section fade" style={{ animationDelay: "0.55s" }}>5 дней</div>
 
         {!loading && (
           <div className="forecast-wrap">
@@ -297,7 +337,8 @@ export default function Weather() {
 
         .subtitle {
           font-size: 14px;
-          color: #B7B0A8;
+          color: #5B5148;
+          font-weight: 600;
           margin-bottom: 8px;
           transition: 0.5s;
         }
@@ -418,11 +459,12 @@ export default function Weather() {
         }
 
         .card {
-          background: white;
+          background: rgba(255, 255, 255, 0.88);
           padding: 18px;
           border-radius: 24px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
           transition: 0.3s;
+          backdrop-filter: blur(8px);
         }
 
         .card:active {
@@ -443,13 +485,14 @@ export default function Weather() {
 
         .label {
           font-size: 14px;
-          color: #999;
+          color: #4B5563;
           margin-bottom: 8px;
         }
 
         .value {
           font-size: 26px;
           font-weight: 700;
+          color: #111827;
         }
 
         .forecast-wrap {
@@ -461,11 +504,12 @@ export default function Weather() {
 
         .forecast {
           min-width: 90px;
-          background: white;
+          background: rgba(255, 255, 255, 0.88);
           padding: 18px;
           border-radius: 22px;
           text-align: center;
-          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+          backdrop-filter: blur(8px);
         }
 
         .forecast-day {
@@ -490,7 +534,8 @@ export default function Weather() {
           color: #B0BBD5;
         }
         .night-mode .card {
-          background: #202B48;
+          background: rgba(32, 43, 72, 0.88);
+          backdrop-filter: blur(10px);
         }
         .night-mode .icon {
           background: #2B385E;
@@ -499,7 +544,8 @@ export default function Weather() {
           color: #B0BDD9;
         }
         .night-mode .forecast {
-          background: #202B48;
+          background: rgba(32, 43, 72, 0.88);
+          backdrop-filter: blur(10px);
         }
         .night-mode .forecast-day {
           color: #B0BDD9;
